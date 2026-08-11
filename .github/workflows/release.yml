@@ -3,7 +3,7 @@ name: Production Release
 on:
   push:
     tags:
-      - "v*"
+      - 'v*'
 
 permissions:
   contents: write
@@ -26,7 +26,7 @@ jobs:
       - name: Rust Cache
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: "./src-tauri -> target"
+          workspaces: './src-tauri -> target'
 
       - name: Install dependencies
         run: pnpm install
@@ -37,15 +37,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           args: --target x86_64-pc-windows-msvc
-
-      - name: Upload Build Artifacts
-        uses: actions/upload-artifact@v7
-        with:
-          name: windows-release-build
-          path: |
-            src-tauri/target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi
-          if-no-files-found: error
-          retention-days: 1
+          tagName: ${{ github.ref_name }}
+          releaseDraft: true
+          uploadWorkflowArtifacts: true
 
   create-release:
     needs: build-tauri-windows
@@ -57,12 +51,11 @@ jobs:
       - name: Download Windows Artifact
         uses: actions/download-artifact@v8
         with:
-          name: windows-release-msi
           path: ./artifacts
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3
         with:
           files: |
-            ./artifacts/*.msi
+            ./artifacts/**/*.msi
           generate_release_notes: true

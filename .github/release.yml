@@ -1,0 +1,16 @@
+changelog:
+  exclude:
+    labels:
+      - skip-changelog
+      - chore
+      - refactor
+      - dependencies
+  categories:
+    - title: 'New features'
+      labels:
+        - feature
+        - enhancement
+    - title: 'Bug fixes'
+      labels:
+        - fix
+        - bug
