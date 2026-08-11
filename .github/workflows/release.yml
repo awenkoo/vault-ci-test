@@ -1,0 +1,68 @@
+name: Production Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-tauri-windows:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/setup@v2
+        with:
+          version: 11
+          runtime: node@24
+          cache: true
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust Cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build Tauri App
+        uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          args: --target x86_64-pc-windows-msvc
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: windows-release-build
+          path: |
+            src-tauri/target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi
+          if-no-files-found: error
+          retention-days: 1
+
+  create-release:
+    needs: build-tauri-windows
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Download Windows Artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: windows-release-msi
+          path: ./artifacts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          files: |
+            ./artifacts/*.msi
+          generate_release_notes: true
